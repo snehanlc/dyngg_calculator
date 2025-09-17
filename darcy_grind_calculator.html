@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dyngg Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f8f6f0;
+            color: #333;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                margin: 10px;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 30px;
+            }
+            
+            .calculate-btn {
+                padding: 18px;
+                font-size: 18px;
+            }
+            
+            .result {
+                font-size: 1.1em;
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.8em;
+            font-weight: normal;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: normal;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+        }
+        
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .sieve-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .sieve-option {
+            padding: 12px;
+            border: none;
+            background: white;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .sieve-option.active {
+            background: #333;
+            color: white;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: #333;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 30px 0;
+        }
+        
+        .calculate-btn:hover {
+            background: #555;
+        }
+        
+        .result {
+            text-align: center;
+            padding: 20px;
+            border: none;
+            background: white;
+            font-size: 1.2em;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dyngg Calculator</h1>
+    
+    <div class="input-group">
+        <label>Grind Size</label>
+        <input type="number" id="grindSize" value="50" step="0.1">
+    </div>
+    
+    <div class="input-group">
+        <label>Peak Pressure (bar)</label>
+        <input type="number" id="peakPressure" value="8.5" step="0.1">
+    </div>
+    
+    <div class="input-group">
+        <label>Flow Rate (ml/s)</label>
+        <input type="number" id="flowRate" value="1.4" step="0.1">
+    </div>
+    
+    <div class="input-group">
+        <label>Sieve Type</label>
+        <div class="sieve-options">
+            <div class="sieve-option active" data-value="1">Singles</div>
+            <div class="sieve-option" data-value="2">Doubles</div>
+        </div>
+    </div>
+    
+    <button class="calculate-btn" onclick="calculate()">Calculate Optimized Grind Size</button>
+    
+    <div class="result" id="result">
+        <div>Optimized Grind Size: <strong id="resultValue">--</strong></div>
+    </div>
+
+    <script>
+        let currentSieve = 1;
+        
+        // Sieve selection
+        document.querySelectorAll('.sieve-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.sieve-option').forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                currentSieve = parseInt(option.dataset.value);
+            });
+        });
+        
+        function calculate() {
+            const grindSize = parseFloat(document.getElementById('grindSize').value) || 0;
+            const peakP = parseFloat(document.getElementById('peakPressure').value) || 0;
+            const flowRate = parseFloat(document.getElementById('flowRate').value) || 0;
+            
+            // Constants
+            const targetP = 9.0;
+            const targetSinglesF = 1.6;
+            const targetDoublesF = 2.0;
+            const adjScale = 100.0;
+            const eps = 0.01;
+            
+            let adjustment = 0;
+            
+            if (peakP <= targetP) {
+                // Pressure-only adjustment
+                adjustment = grindSize * (Math.sqrt(peakP / targetP) - 1.0);
+            } else if (currentSieve === 1) {
+                // Singles adjustment
+                const denom = Math.min(targetSinglesF, flowRate > 0 ? flowRate : eps);
+                adjustment = adjScale * (Math.pow((targetSinglesF * peakP) / (targetP * denom), 0.1) - 1.0);
+            } else {
+                // Doubles adjustment
+                const denom = Math.min(targetDoublesF, flowRate > 0 ? flowRate : eps);
+                adjustment = adjScale * (Math.pow((peakP * targetDoublesF) / (targetP * denom), 0.3) - 1.0);
+            }
+            
+            const optimizedGrindSize = grindSize + adjustment;
+            
+            document.getElementById('resultValue').textContent = optimizedGrindSize.toFixed(2);
+            document.getElementById('result').classList.add('show');
+        }
+    </script>
+</body>
+</html>
