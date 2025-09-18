@@ -170,23 +170,23 @@
             // Constants
             const targetP = 9.0;
             const targetSinglesF = 1.6;
-            const targetDoublesF = 2.0;
+            const targetDoublesF = 1.8;  // Updated from 2.0 to 1.8
             const adjScale = 100.0;
             const eps = 0.01;
             
             let adjustment = 0;
             
             if (peakP <= targetP) {
-                // Pressure-only adjustment
-                adjustment = grindSize * (Math.sqrt(peakP / targetP) - 1.0);
+                // Pressure-only adjustment: das * (pow(peak_p/tp, 0.3) - 1.0)
+                adjustment = adjScale * (Math.pow(peakP / targetP, 0.3) - 1.0);
             } else if (currentSieve === 1) {
-                // Singles adjustment
+                // Singles adjustment: das * (pow(tfs/denom1, 0.1) - 1.0)
                 const denom = Math.min(targetSinglesF, flowRate > 0 ? flowRate : eps);
-                adjustment = adjScale * (Math.pow((targetSinglesF * peakP) / (targetP * denom), 0.1) - 1.0);
+                adjustment = adjScale * (Math.pow(targetSinglesF / denom, 0.1) - 1.0);
             } else {
-                // Doubles adjustment
+                // Doubles adjustment: das * (pow(tfd/denom2, 0.3) - 1.0)
                 const denom = Math.min(targetDoublesF, flowRate > 0 ? flowRate : eps);
-                adjustment = adjScale * (Math.pow((peakP * targetDoublesF) / (targetP * denom), 0.3) - 1.0);
+                adjustment = adjScale * (Math.pow(targetDoublesF / denom, 0.3) - 1.0);
             }
             
             const optimizedGrindSize = grindSize + adjustment;
